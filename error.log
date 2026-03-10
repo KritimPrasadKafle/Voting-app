@@ -1,0 +1,24 @@
+
+> nextjs-anchor@0.0.0 setup
+> npm run anchor-build && npm run codama:js
+
+
+> nextjs-anchor@0.0.0 anchor-build
+> cd anchor && anchor build
+
+Updating program ids...
+Syncing program ids for the configured cluster (devnet)
+
+Found incorrect program id declaration in "/Users/kritimprasadkafle/Documents/voting-dapp/anchor/programs/vault/src/lib.rs"
+Updated to 5Fmz3ZSRyEQki4UpfARGigCTrK3sXfkJxSBxURnUjTxD
+
+Found incorrect program id declaration in Anchor.toml for the program `vault`
+Updated to 5Fmz3ZSRyEQki4UpfARGigCTrK3sXfkJxSBxURnUjTxD
+
+All program id declarations are synced.
+Please rebuild the program to update the generated artifacts.
+
+error: failed to parse lock file at: /Users/kritimprasadkafle/Documents/voting-dapp/anchor/Cargo.lock
+
+Caused by:
+  lock file version 4 requires `-Znext-lockfile-bump`
