@@ -20,3 +20,7 @@ test = "cargo test"
 [provider]
 cluster = "localnet"   # change from "devnet"
 wallet = "~/.config/solana/id.json"
+
+
+[programs.localnet]
+voting = "5Fmz3ZSRyEQki4UpfARGigCTrK3sXfkJxSBxURnUjTxD"   
