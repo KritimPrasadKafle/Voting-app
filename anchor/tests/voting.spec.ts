@@ -4,7 +4,6 @@ import { Voting } from '../target/types/voting';
 import { PublicKey } from '@solana/web3.js';
 import { BankrunProvider, startAnchor } from 'anchor-bankrun';
 
-// ✅ Import IDL from JSON, not from the types file
 const IDL = require('../target/idl/voting.json');
 
 describe('Voting', () => {
@@ -57,11 +56,6 @@ describe('Voting', () => {
     const candidateId = new anchor.BN(1);
     const candidateName = 'Beef Pho';
 
-    const [pollAddress] = PublicKey.findProgramAddressSync(
-      [pollId.toArrayLike(Buffer, 'le', 8)],
-      votingProgram.programId
-    );
-
     const [candidateAddress] = PublicKey.findProgramAddressSync(
       [
         candidateId.toArrayLike(Buffer, 'le', 8),
@@ -71,12 +65,9 @@ describe('Voting', () => {
     );
 
     await votingProgram.methods
-  .initializeCandidate(candidateId, candidateName, pollId)
-  .accounts({
-    initializer: provider.wallet.publicKey,
-    // ✅ Remove candidate — Anchor derives it automatically from candidateId + pollId args
-  })
-  .rpc();
+      .initializeCandidate(candidateId, candidateName, pollId)
+      .accounts({ initializer: provider.wallet.publicKey })
+      .rpc();
 
     const candidateAccount = await votingProgram.account.candidate.fetch(candidateAddress);
 
@@ -98,15 +89,79 @@ describe('Voting', () => {
     );
 
     await votingProgram.methods
-  .initializeCandidate(candidateId, candidateName, pollId)
-  .accounts({
-    initializer: provider.wallet.publicKey,
-  })
-  .rpc();
+      .initializeCandidate(candidateId, candidateName, pollId)
+      .accounts({ initializer: provider.wallet.publicKey })
+      .rpc();
 
     const candidateAccount = await votingProgram.account.candidate.fetch(candidateAddress);
 
     expect(candidateAccount.candidateName).toBe(candidateName);
     expect(candidateAccount.voteCount.toNumber()).toBe(0);
+  });
+
+  // ─── Vote ────────────────────────────────────────────────────────────────────
+
+  it('Vote for Beef Pho', async () => {
+    const pollId = new anchor.BN(1);
+    const candidateId = new anchor.BN(1); // Beef Pho
+
+    const [candidateAddress] = PublicKey.findProgramAddressSync(
+      [
+        candidateId.toArrayLike(Buffer, 'le', 8),
+        pollId.toArrayLike(Buffer, 'le', 8),
+      ],
+      votingProgram.programId
+    );
+
+    // Vote once — Anchor auto-resolves poll + candidates PDAs from args
+    await votingProgram.methods
+      .vote(candidateId, pollId)
+      .accounts({ voter: provider.wallet.publicKey })
+      .rpc();
+
+    const candidateAccount = await votingProgram.account.candidate.fetch(candidateAddress);
+    expect(candidateAccount.voteCount.toNumber()).toBe(1);
+  });
+
+  it('Vote for Beef Pho again (vote count increments)', async () => {
+    const pollId = new anchor.BN(1);
+    const candidateId = new anchor.BN(1);
+
+    const [candidateAddress] = PublicKey.findProgramAddressSync(
+      [
+        candidateId.toArrayLike(Buffer, 'le', 8),
+        pollId.toArrayLike(Buffer, 'le', 8),
+      ],
+      votingProgram.programId
+    );
+
+    await votingProgram.methods
+      .vote(candidateId, pollId)
+      .accounts({ voter: provider.wallet.publicKey })
+      .rpc();
+
+    const candidateAccount = await votingProgram.account.candidate.fetch(candidateAddress);
+    expect(candidateAccount.voteCount.toNumber()).toBe(2);
+  });
+
+  it('Vote for Chicken Pho', async () => {
+    const pollId = new anchor.BN(1);
+    const candidateId = new anchor.BN(2); // Chicken Pho
+
+    const [candidateAddress] = PublicKey.findProgramAddressSync(
+      [
+        candidateId.toArrayLike(Buffer, 'le', 8),
+        pollId.toArrayLike(Buffer, 'le', 8),
+      ],
+      votingProgram.programId
+    );
+
+    await votingProgram.methods
+      .vote(candidateId, pollId)
+      .accounts({ voter: provider.wallet.publicKey })
+      .rpc();
+
+    const candidateAccount = await votingProgram.account.candidate.fetch(candidateAddress);
+    expect(candidateAccount.voteCount.toNumber()).toBe(1);
   });
 });
