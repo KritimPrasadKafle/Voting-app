@@ -5,14 +5,18 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-vault = "5Fmz3ZSRyEQki4UpfARGigCTrK3sXfkJxSBxURnUjTxD"
+voting = "5Fmz3ZSRyEQki4UpfARGigCTrK3sXfkJxSBxURnUjTxD"
 
 [registry]
 url = "https://api.apr.dev"
 
-[provider]
-cluster = "devnet"
-wallet = "~/.config/solana/id.json"
+# [provider]
+# cluster = "devnet"
+# wallet = "~/.config/solana/id.json"
 
 [scripts]
 test = "cargo test"
+
+[provider]
+cluster = "localnet"   # change from "devnet"
+wallet = "~/.config/solana/id.json"

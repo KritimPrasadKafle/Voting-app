@@ -1,6 +1,0 @@
-
-
-
-describe('Voting', () => {
-    if('')
-})

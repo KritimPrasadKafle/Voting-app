@@ -6,7 +6,7 @@ mod tests;
 declare_id!("5Fmz3ZSRyEQki4UpfARGigCTrK3sXfkJxSBxURnUjTxD");
 
 #[program]
-pub mod vault {
+pub mod voting {
     use super::*;
 
     pub fn initialize_poll(ctx: Context<InitializePoll>, poll_id: u64, poll_start: u64, poll_end: u64, description: String) -> Result<()> {
