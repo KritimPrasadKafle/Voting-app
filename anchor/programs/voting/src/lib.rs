@@ -3,8 +3,7 @@ use anchor_lang::prelude::*;
 #[cfg(test)]
 mod tests;
 
-declare_id!("5Fmz3ZSRyEQki4UpfARGigCTrK3sXfkJxSBxURnUjTxD");
-
+declare_id!("2EYUjiH8FG5smvqEiy5sNaBuaLnsF5bZHewZEKmeZPL3");
 #[program]
 pub mod voting {
     use super::*;
@@ -26,6 +25,35 @@ pub mod voting {
         candidate.vote_count = 0;
         Ok(())
     }
+
+    pub fn vote(ctx: Context<Vote>, candidate_name: String, poll_id: u64) -> Result<()>{
+        let candidate = &mut ctx.accounts.candidates;
+        candidate.vote_count += 1;
+        Ok(())
+    }
+
+
+}
+
+#[derive(Accounts)]
+#[instruction(candidate_name: String, poll_id: u64)]
+pub struct Vote<'info> {
+    #[account(mut)]
+    pub voter: Signer<'info>,
+
+    #[account(
+        seeds = [poll_id.to_le_bytes().as_ref()],
+        bump
+    )]
+    pub poll: Account<'info, Poll>,
+
+    #[account(
+        mut,
+        seeds = [candidate_name.as_bytes(), poll_id.to_le_bytes().as_ref()],
+        bump
+    )]
+
+    pub candidates: Account<'info, Candidate>,
 }
 
 #[derive(Accounts)]

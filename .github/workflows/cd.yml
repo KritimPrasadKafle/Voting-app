@@ -58,9 +58,6 @@ jobs:
       - name: Set Solana cluster to devnet
         run: solana config set --url devnet
 
-      - name: Set Solana cluster to devnet
-        run: solana config set --url devnet
-
       - name: Check deployer balance
         run: solana balance
 

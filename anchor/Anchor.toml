@@ -4,8 +4,7 @@
 resolution = true
 skip-lint = false
 
-[programs.devnet]
-voting = "5Fmz3ZSRyEQki4UpfARGigCTrK3sXfkJxSBxURnUjTxD"
+
 
 [registry]
 url = "https://api.apr.dev"
@@ -22,5 +21,9 @@ cluster = "localnet"   # change from "devnet"
 wallet = "~/.config/solana/id.json"
 
 
+
 [programs.localnet]
-voting = "5Fmz3ZSRyEQki4UpfARGigCTrK3sXfkJxSBxURnUjTxD"   
+voting = "2EYUjiH8FG5smvqEiy5sNaBuaLnsF5bZHewZEKmeZPL3"
+
+[programs.devnet]
+voting = "2EYUjiH8FG5smvqEiy5sNaBuaLnsF5bZHewZEKmeZPL3"
