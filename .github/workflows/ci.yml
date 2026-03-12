@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            anchor/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Install Solana CLI
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+      - name: Install Anchor CLI
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor avm --force
+          avm install latest
+          avm use latest
+          echo "$HOME/.avm/bin" >> $GITHUB_PATH
+
+      - name: Install Node dependencies
+        working-directory: anchor
+        run: yarn install
+
+      - name: Generate localnet keypair
+        run: solana-keygen new --no-bip39-passphrase --silent
+
+      - name: Set Solana cluster to localnet
+        run: solana config set --url localhost
+
+      - name: Build program
+        working-directory: anchor
+        run: anchor build
+
+      - name: Run tests
+        working-directory: anchor
+        run: anchor test
