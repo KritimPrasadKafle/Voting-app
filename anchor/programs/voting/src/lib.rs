@@ -18,7 +18,41 @@ pub mod voting {
         poll.candidate_amount = 0;
         Ok(())
     }
+
+    pub fn initialize_candidate(ctx: Context<InitializeCandidate>, candidate_id: u64, candidate_name: String, poll_id: u64) -> Result<()> {
+
+        let candidate = &mut ctx.accounts.candidate;
+        candidate.candidate_name = candidate_name;
+        candidate.vote_count = 0;
+        Ok(())
+    }
 }
+
+#[derive(Accounts)]
+#[instruction(candidate_id: u64, poll_id: u64)]
+pub struct InitializeCandidate<'info>{
+    #[account(mut)]
+    pub initializer: Signer<'info>,
+
+    #[account(
+        init,
+        payer = initializer,
+        space = 8 + Candidate::INIT_SPACE,
+        seeds = [candidate_id.to_le_bytes().as_ref(), poll_id.to_le_bytes().as_ref()],
+        bump
+    )]
+    pub candidate: Account<'info, Candidate>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct Candidate {
+    #[max_len(200)]
+    pub candidate_name: String,
+    pub vote_count: u64,
+}   
 
 #[derive(Accounts)]
 #[instruction(poll_id: u64)]  // ✅ Required to use poll_id in seeds

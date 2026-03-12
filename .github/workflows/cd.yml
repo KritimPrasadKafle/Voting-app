@@ -50,6 +50,14 @@ jobs:
           mkdir -p ~/.config/solana
           echo "${{ secrets.DEPLOY_KEYPAIR }}" > ~/.config/solana/id.json
 
+      - name: Restore program keypair from secret
+        run: |
+          mkdir -p anchor/target/deploy
+          echo "${{ secrets.PROGRAM_KEYPAIR }}" > anchor/target/deploy/voting-keypair.json
+
+      - name: Set Solana cluster to devnet
+        run: solana config set --url devnet
+
       - name: Set Solana cluster to devnet
         run: solana config set --url devnet
 
