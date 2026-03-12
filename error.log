@@ -9,10 +9,10 @@
 Updating program ids...
 Syncing program ids for the configured cluster (devnet)
 
-Found incorrect program id declaration in "/Users/kritimprasadkafle/Documents/voting-dapp/anchor/programs/vault/src/lib.rs"
+Found incorrect program id declaration in "/Users/kritimprasadkafle/Documents/voting-dapp/anchor/programs/voting/src/lib.rs"
 Updated to 5Fmz3ZSRyEQki4UpfARGigCTrK3sXfkJxSBxURnUjTxD
 
-Found incorrect program id declaration in Anchor.toml for the program `vault`
+Found incorrect program id declaration in Anchor.toml for the program `voting`
 Updated to 5Fmz3ZSRyEQki4UpfARGigCTrK3sXfkJxSBxURnUjTxD
 
 All program id declarations are synced.
