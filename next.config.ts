@@ -1,7 +1,10 @@
-import type { NextConfig } from "next";
+// next.config.ts
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["ws"],
-};
+  watchOptions: {
+    ignored: ['**/test-ledger/**', '**/node_modules/**'],
+  },
+}
 
-export default nextConfig;
+export default nextConfig
