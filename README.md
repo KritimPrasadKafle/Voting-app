@@ -1,118 +1,260 @@
-# nextjs-anchor
+# 🗳️ Voting DApp — Solana + Anchor
 
-Next.js starter with Tailwind CSS, `@solana/react-hooks`, and an Anchor voting program example.
+A decentralized on-chain voting program built on Solana using the Anchor framework. Users can create polls, register candidates, and cast votes — all stored transparently on-chain.
 
-## Getting Started
+---
 
-```shell
-npx -y create-solana-dapp@latest -t solana-foundation/templates/kit/nextjs-anchor
+## 📋 Table of Contents
+
+- [Overview](#overview)
+- [Program Architecture](#program-architecture)
+- [Account Structure](#account-structure)
+- [Instructions](#instructions)
+- [PDA Seeds](#pda-seeds)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Getting Started](#getting-started)
+- [Running Tests](#running-tests)
+- [Known Issues & Notes](#known-issues--notes)
+
+---
+
+## Overview
+
+This program allows anyone to:
+
+1. **Create a poll** with a description and a time window (`poll_start` / `poll_end`)
+2. **Register candidates** under a poll, each identified by a numeric ID
+3. **Vote** for a candidate by name within an active poll
+
+All state is stored in PDAs (Program Derived Addresses) on-chain, making it fully verifiable and permissionless.
+
+---
+
+## Program Architecture
+
+```
+Wallet (initializer / voter)
+        │
+        ├── initialize_poll   ──▶  Poll PDA  [seeds: poll_id]
+        │
+        ├── initialize_candidate ──▶  Candidate PDA  [seeds: candidate_id, poll_id]
+        │
+        └── vote  ──▶  Candidate PDA  (increments vote_count)
+                  └──▶  Poll PDA      (validates poll is active)
 ```
 
-```shell
-npm install   # Builds program and generates client automatically
-npm run dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000), connect your wallet, and interact with the voting on devnet.
+## Account Structure
 
-## What's Included
+### `Poll`
 
-- **Wallet connection** via `@solana/react-hooks` with auto-discovery
-- **SOL Voting program** - deposit and withdraw SOL from a personal PDA voting
-- **Codama-generated client** - type-safe program interactions using `@solana/kit`
-- **Tailwind CSS v4** with light/dark mode
+Stores metadata about a single poll.
 
-## Stack
+| Field              | Type     | Description                          |
+|--------------------|----------|--------------------------------------|
+| `poll_id`          | `u64`    | Unique identifier for the poll       |
+| `description`      | `String` | Poll question (max 200 chars)        |
+| `poll_start`       | `u64`    | Unix timestamp when voting opens     |
+| `poll_end`         | `u64`    | Unix timestamp when voting closes    |
+| `candidate_amount` | `u64`    | Number of candidates registered      |
 
-| Layer          | Technology                              |
-| -------------- | --------------------------------------- |
-| Frontend       | Next.js 16, React 19, TypeScript        |
-| Styling        | Tailwind CSS v4                         |
-| Solana Client  | `@solana/client`, `@solana/react-hooks` |
-| Program Client | Codama-generated, `@solana/kit`         |
-| Program        | Anchor (Rust)                           |
+### `Candidate`
+
+Stores a single candidate's data within a poll.
+
+| Field            | Type     | Description                        |
+|------------------|----------|------------------------------------|
+| `candidate_name` | `String` | Name of the candidate (max 200 chars) |
+| `vote_count`     | `u64`    | Total votes received               |
+
+---
+
+## Instructions
+
+### `initialize_poll`
+
+Creates a new poll account.
+
+| Argument      | Type     | Description                   |
+|---------------|----------|-------------------------------|
+| `poll_id`     | `u64`    | Unique poll ID (used as seed) |
+| `poll_start`  | `u64`    | Voting start timestamp        |
+| `poll_end`    | `u64`    | Voting end timestamp          |
+| `description` | `String` | Poll question                 |
+
+**Accounts:** `initializer` (signer), `poll` (PDA, init), `system_program`
+
+---
+
+### `initialize_candidate`
+
+Registers a candidate under an existing poll.
+
+| Argument         | Type     | Description                          |
+|------------------|----------|--------------------------------------|
+| `candidate_id`   | `u64`    | Unique candidate ID (used as seed)   |
+| `candidate_name` | `String` | Display name of the candidate        |
+| `poll_id`        | `u64`    | The poll this candidate belongs to   |
+
+**Accounts:** `initializer` (signer), `candidate` (PDA, init), `system_program`
+
+---
+
+### `vote`
+
+Casts a vote for a candidate within a poll.
+
+| Argument         | Type     | Description                              |
+|------------------|----------|------------------------------------------|
+| `candidate_name` | `String` | Name of the candidate to vote for (seed) |
+| `poll_id`        | `u64`    | The poll to vote in                      |
+
+**Accounts:** `voter` (signer), `poll` (PDA, validates active), `candidates` (PDA, mut)
+
+---
+
+## PDA Seeds
+
+| Account     | Seeds                                          |
+|-------------|------------------------------------------------|
+| `Poll`      | `[poll_id (le bytes)]`                         |
+| `Candidate` | `[candidate_id (le bytes), poll_id (le bytes)]`|
+
+> ⚠️ **Seed mismatch note:** The `vote` instruction uses `candidate_name` as a seed, but `initialize_candidate` uses `candidate_id`. These must align for the PDAs to resolve to the same address. Consider standardizing to one approach (see [Known Issues](#known-issues--notes)).
+
+---
 
 ## Project Structure
 
 ```
-├── app/
-│   ├── components/
-│   │   ├── providers.tsx      # Solana client setup
-│   │   └── voting-card.tsx     # voting deposit/withdraw UI
-│   ├── generated/voting/       # Codama-generated program client
-│   └── page.tsx               # Main page
-├── anchor/                    # Anchor workspace
-│   └── programs/voting/        # voting program (Rust)
-└── codama.json                # Codama client generation config
+voting-dapp/
+└── anchor/
+    ├── programs/
+    │   └── voting/
+    │       └── src/
+    │           └── lib.rs          # Program logic
+    ├── tests/
+    │   └── voting.ts               # Bankrun integration tests
+    ├── target/
+    │   ├── idl/
+    │   │   └── voting.json         # Generated IDL
+    │   └── types/
+    │       └── voting.ts           # Generated TypeScript types
+    └── Anchor.toml
 ```
 
-## Deploy Your Own voting
+---
 
-The included voting program is already deployed to devnet. To deploy your own:
+## Prerequisites
 
-### Prerequisites
+| Tool          | Version     | Install                                                      |
+|---------------|-------------|--------------------------------------------------------------|
+| Rust          | stable      | [rustup.rs](https://rustup.rs)                               |
+| Solana CLI    | 1.18+       | [docs.solana.com](https://docs.solana.com/cli/install-tool-suite) |
+| Anchor CLI    | 0.30+       | `cargo install --git https://github.com/coral-xyz/anchor anchor-cli` |
+| Node.js       | 18+         | [nodejs.org](https://nodejs.org)                             |
+| Yarn / npm    | any         | bundled with Node                                            |
 
-- [Rust](https://rustup.rs/)
-- [Solana CLI](https://solana.com/docs/intro/installation)
-- [Anchor](https://www.anchor-lang.com/docs/installation)
+---
 
-### Steps
+## Getting Started
 
-1. **Configure Solana CLI for devnet**
-
-   ```bash
-   solana config set --url devnet
-   ```
-
-2. **Create a wallet (if needed) and fund it**
-
-   ```bash
-   solana-keygen new
-   solana airdrop 2
-   ```
-
-3. **Build and deploy the program**
-
-   ```bash
-   cd anchor
-   anchor build
-   anchor keys sync    # Updates program ID in source
-   anchor build        # Rebuild with new ID
-   anchor deploy
-   cd ..
-   ```
-
-4. **Regenerate the client and restart**
-   ```bash
-   npm run setup   # Rebuilds program and regenerates client
-   npm run dev
-   ```
-
-## Testing
-
-Tests use [LiteSVM](https://github.com/LiteSVM/litesvm), a fast lightweight Solana VM for testing.
+### 1. Clone the repository
 
 ```bash
-npm run anchor-build   # Build the program first
-npm run anchor-test    # Run tests
+git clone <your-repo-url>
+cd voting-dapp/anchor
 ```
 
-The tests are in `anchor/programs/voting/src/tests.rs` and automatically use the program ID from `declare_id!`.
-
-## Regenerating the Client
-
-If you modify the program, regenerate the TypeScript client:
+### 2. Install JavaScript dependencies
 
 ```bash
-npm run setup   # Or: npm run anchor-build && npm run codama:js
+yarn install
+# or
+npm install
 ```
 
-This uses [Codama](https://github.com/codama-idl/codama) to generate a type-safe client from the Anchor IDL.
+### 3. Build the program
 
-## Learn More
+```bash
+anchor build
+```
 
-- [Solana Docs](https://solana.com/docs) - core concepts and guides
-- [Anchor Docs](https://www.anchor-lang.com/docs) - program development framework
-- [Deploying Programs](https://solana.com/docs/programs/deploying) - deployment guide
-- [framework-kit](https://github.com/solana-foundation/framework-kit) - the React hooks used here
-- [Codama](https://github.com/codama-idl/codama) - client generation from IDL
+This compiles the Rust program and regenerates `target/idl/voting.json` and `target/types/voting.ts`.
+
+### 4. Sync the program ID
+
+After the first build, copy the generated program ID into `lib.rs` and `Anchor.toml`:
+
+```bash
+anchor keys sync
+```
+
+### 5. Run tests
+
+```bash
+anchor test
+```
+
+---
+
+## Running Tests
+
+Tests use [Bankrun](https://github.com/kevinheavey/solana-bankrun) for fast, local simulation without needing a running validator.
+
+```bash
+anchor test
+```
+
+The test suite covers:
+
+| Test                       | Description                                     |
+|----------------------------|-------------------------------------------------|
+| `Initialize Poll`          | Creates a poll and validates all fields         |
+| `Initialize Candidate`     | Registers "Beef Pho" as candidate #1            |
+| `Initialize second Candidate` | Registers "Chicken Pho" as candidate #2      |
+| `Vote for Beef Pho`        | Casts one vote, expects `vote_count = 1`        |
+| `Vote for Beef Pho again`  | Casts second vote, expects `vote_count = 2`     |
+| `Vote for Chicken Pho`     | Votes for candidate #2, expects `vote_count = 1`|
+
+---
+
+## Known Issues & Notes
+
+### Seed inconsistency between `initialize_candidate` and `vote`
+
+`initialize_candidate` uses `[candidate_id, poll_id]` as PDA seeds, but `vote` uses `[candidate_name, poll_id]`. This means they derive **different PDAs** and the vote instruction cannot find the account created by initialize_candidate.
+
+**Recommended fix** — standardize both to use `candidate_id`:
+
+```rust
+// In Vote struct
+#[account(
+    mut,
+    seeds = [candidate_id.to_le_bytes().as_ref(), poll_id.to_le_bytes().as_ref()],
+    bump
+)]
+pub candidates: Account<'info, Candidate>,
+```
+
+And update the `vote` function signature to accept `candidate_id: u64` instead of `candidate_name: String`.
+
+### `candidate_amount` is never incremented
+
+The `Poll` account has a `candidate_amount` field but `initialize_candidate` never increments it. Add this to the instruction if you want accurate tracking:
+
+```rust
+ctx.accounts.poll.candidate_amount += 1;
+```
+
+### No time validation in `vote`
+
+The `vote` instruction has access to the `poll` account but does not currently validate that `Clock::get()?.unix_timestamp` falls between `poll_start` and `poll_end`. Add this guard to enforce the poll window.
+
+---
+
+## License
+
+MIT
